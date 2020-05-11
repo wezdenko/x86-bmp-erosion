@@ -56,6 +56,7 @@ void* freeResources(FILE* pFile, void* pFirst, void* pSnd)
 
 imgInfo* readBMP(const char* fname)
 {
+	
 	imgInfo* pInfo = 0;
 	FILE* fbmp = 0;
 	bmpHdr bmpHead;
@@ -69,10 +70,9 @@ imgInfo* readBMP(const char* fname)
 		return 0;
 
 	fread((void *) &bmpHead, sizeof(bmpHead), 1, fbmp);
+
 	// some basic checks
-	if (bmpHead.bfType != 0x4D42 || bmpHead.biPlanes != 1 ||
-		bmpHead.biBitCount != 1 || bmpHead.biClrUsed != 2 ||
-		(pInfo = (imgInfo *) malloc(sizeof(imgInfo))) == 0)
+	if ((pInfo = (imgInfo *) malloc(sizeof(imgInfo))) == 0)
 		return (imgInfo*) freeResources(fbmp, pInfo->pImg, pInfo);
 
 	pInfo->width = bmpHead.biWidth;
@@ -104,6 +104,7 @@ imgInfo* readBMP(const char* fname)
 		fread(ptr, 1, abs(lineBytes), fbmp);
 		ptr += lineBytes;
 	}
+
 	fclose(fbmp);
 	return pInfo;
 }
@@ -184,105 +185,6 @@ void FreeScreen(imgInfo* pInfo)
 		free(pInfo);
 }
 
-imgInfo* SetColor(imgInfo* pImg, int col)
-{
-	pImg->col = col != 0;
-	return pImg;
-}
-
-imgInfo* MoveTo(imgInfo* pImg, int x, int y)
-{
-	if (x >= 0 && x < pImg->width)
-		pImg->cX = x;
-	if (y >= 0 && y < pImg->height)
-		pImg->cY = y;
-	return pImg;
-}
-
-void SetPixel(imgInfo* pImg, int x, int y)
-{
-	unsigned char *pPix = pImg->pImg + (((pImg->width + 31) >> 5) << 2) * y + (x >> 3);
-	unsigned char mask = 0x80 >> (x & 0x07);
-	if (pImg->col)
-		*pPix |= mask;
-	else
-		*pPix &= ~mask;
-}
-
-imgInfo* LineTo(imgInfo* pImg, int x, int y)
-{
-	// draws line segment between current position and (x,y)
-	int cx = pImg->cX, cy = pImg->cY;
-	int dx = x - cx, xi = 1, dy = y - cy, yi = 1;
-	int d, ai, bi;
-
-	if (dx < 0)
-	{ 
-		xi = -1;
-		dx = -dx;
-	} 
-
-	if (dy < 0)
-	{ 
-		yi = -1;
-		dy = -dy;
-	} 
-
-	// first pixel
-	SetPixel(pImg, cx, cy);
-
-	// horizontal drawing 
-	if (dx > dy)
-	{
-		ai = (dy - dx) * 2;
-		bi = dy * 2;
-		d = bi - dx;
-		// for each x
-		while (cx != x)
-		{ 
-			// check line move indicator
-			if (d >= 0)
-			{ 
-				cx += xi;
-				cy += yi;
-				d += ai;
-			} 
-			else
-			{
-				d += bi;
-				cx += xi;
-			}
-			SetPixel(pImg, cx, cy);
-		}
-	} 
-	// vertical drawing
-	else
-	{ 
-		ai = ( dx - dy ) * 2;
-		bi = dx * 2;
-		d = bi - dy;
-		// for each y
-		while (cy != y)
-		{ 
-			// check column move indicator
-			if (d >= 0)
-			{ 
-				cx += xi;
-				cy += yi;
-				d += ai;
-			}
-			else
-			{
-				d += bi;
-				cy += yi;
-			}
-			SetPixel(pImg, cx, cy);
-		}
-	}
-	pImg->cX = x;
-	pImg->cY = y;
-	return pImg;
-}
 
 /****************************************************************************************/
 
@@ -306,36 +208,17 @@ int main(int argc, char* argv[])
 	int i;
 
 	printf("Size of bmpHeader = %d\n", sizeof(bmpHdr));
+	
 	if (sizeof(bmpHdr) != 62)
 	{
 		printf("Change compilation options so as bmpHdr struct size is 62 bytes.\n");
 		return 1;
 	}
-	if ((pInfo = InitScreen (512, 512)) == 0)
-		return 2;
-	/*
-	saveBMP(pInfo, "blank.bmp");
-	pInfo = readBMP("blank.bmp");
-	*/
 
-	SetColor(pInfo, 0);
-	for (i=0; i<256; ++i)
-	{
-		MoveTo(pInfo, 256, i);
-		LineTo(pInfo, 511, i);
-		MoveTo(pInfo, i, 256);
-		LineTo(pInfo, i, 511);
-	}
-
-	DrawPolyCircle(pInfo, 8, 3, 127, 127, 100);
-	DrawPolyCircle(pInfo, 16, 5, 383, 383, 100);
-
-	SetColor(pInfo, 1);
-	DrawPolyCircle(pInfo, 10, 3, 383, 127, 100);
-	DrawPolyCircle(pInfo, 13, 4, 127, 383, 100);
-
-	saveBMP(pInfo, "result.bmp");
+	pInfo = readBMP("test.bmp");
+	saveBMP(pInfo, "result2.bmp");
 	FreeScreen(pInfo);
+	
 	return 0;
 }
 
