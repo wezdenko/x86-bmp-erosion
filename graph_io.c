@@ -37,6 +37,7 @@ typedef struct
 
 typedef struct
 {
+	int rowByteSize;		// rozmiar wiersza w bajtach
 	int width, height;		// szerokosc i wysokosc obrazu
 	unsigned char* pImg;	// wskazanie na początek danych pikselowych
 	int cX, cY;				// "aktualne współrzędne" 
@@ -85,6 +86,8 @@ imgInfo* readBMP(const char* fname)
 	// process height (it can be negative)
 	ptr = pInfo->pImg;
 	lineBytes = ((pInfo->width + 31) >> 5) << 2; // line size in bytes
+	pInfo->rowByteSize = lineBytes;
+
 	if (pInfo->height > 0)
 	{
 		// "upside down", bottom of the image first
@@ -177,6 +180,8 @@ imgInfo* InitScreen (int w, int h)
 	return pImg;
 }
 
+
+
 void FreeScreen(imgInfo* pInfo)
 {
 	if (pInfo && pInfo->pImg)
@@ -185,26 +190,62 @@ void FreeScreen(imgInfo* pInfo)
 		free(pInfo);
 }
 
+void SetPixel(imgInfo* pImg, int x, int y)
+{
+	unsigned char *pPix = pImg->pImg + (((pImg->width + 31) >> 5) << 2) * y + (x >> 3);
+	unsigned char mask = 0x80 >> (x & 0x07);
+	if (pImg->col)
+		*pPix |= mask;
+	else
+		*pPix &= ~mask;
+}
 
 /****************************************************************************************/
 
-void DrawPolyCircle(imgInfo* pInfo, int vCnt, int nStep, int cX, int cY, int radius)
+void TwoBytesErosion(imgInfo* pImg, imgInfo* pImgCopy, int byteNum1, int byteNum2)
 {
-	double pi = 2*asin(1);
-	int i;
+	unsigned char *pByte1 = pImg->pImg + byteNum1;
+	unsigned char *pByte2 = pImg->pImg + byteNum2;
+	unsigned char *pByteCopy = pImgCopy->pImg + byteNum1;
 
-	MoveTo(pInfo, cX, cY - radius);
-	for (i=nStep; i <= nStep * vCnt; i += nStep)
-	{
-		LineTo(pInfo, 
-			(int)(cX + 0.5 + sin((2 * pi * i)/vCnt) * radius), 
-			(int)(cY + 0.5 - cos((2 * pi * i)/vCnt) * radius));
-	}
+	unsigned int threeBytes1, threeBytes2;
+
+	threeBytes1 = (*(pByte1 - 1) << 16) + (*pByte1 << 8) + (*(pByte1 + 1));
+	threeBytes2 = (*(pByte2 - 1) << 16) + (*pByte2 << 8) + (*(pByte2 + 1));
+
+
+	threeBytes1 = threeBytes1 | threeBytes2;
+	threeBytes1 = threeBytes1 | (threeBytes2 >> 1);
+	threeBytes1 = threeBytes1 | (threeBytes2 << 1);
+
+	*pByteCopy = threeBytes1 >> 8;
 }
+
+
+imgInfo* Erosion(imgInfo* pImg)
+{
+	imgInfo* pErosionInfo;
+
+	pErosionInfo = InitScreen(pImg->width, pImg->height);
+
+	int byteSize = pImg->height * pImg->rowByteSize;
+
+	for (int i = 0; i < byteSize; i++)
+	{
+		TwoBytesErosion(pImg, pErosionInfo, i, i);
+		TwoBytesErosion(pImg, pErosionInfo, i, i + pImg->rowByteSize);
+		TwoBytesErosion(pImg, pErosionInfo, i, i - pImg->rowByteSize);
+	}
+
+	return pErosionInfo;
+}
+
+/****************************************************************************************/
 
 int main(int argc, char* argv[])
 {
 	imgInfo* pInfo;
+	imgInfo* pErosionInfo;
 	int i;
 
 	printf("Size of bmpHeader = %d\n", sizeof(bmpHdr));
@@ -215,8 +256,20 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+
 	pInfo = readBMP("test.bmp");
-	saveBMP(pInfo, "result2.bmp");
+	/*
+	printf("poczatek pliku: %#x\n", pInfo->pImg);
+	printf("aktualne wpolrzedne: (%d, %d)\n", pInfo->cX, pInfo->cY);
+	printf("aktualny kolor: %d\n", pInfo->col);
+	printf("wysokosc: %d\n", pInfo->height);
+	printf("szerokosc: %d\n", pInfo->width);
+	*/
+	pErosionInfo = Erosion(pInfo);
+
+	saveBMP(pErosionInfo, "result2.bmp");
+
+	FreeScreen(pErosionInfo);
 	FreeScreen(pInfo);
 	
 	return 0;
