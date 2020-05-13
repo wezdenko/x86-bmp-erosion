@@ -222,32 +222,128 @@ void TwoBytesErosion(imgInfo* pImg, imgInfo* pImgCopy, int byteNum1, int byteNum
 }
 
 
+void LeftEdgeErosion(imgInfo* pImg, imgInfo* pImgCopy, int byteNum1, int byteNum2)
+{
+	unsigned char *pByte1 = pImg->pImg + byteNum1;
+	unsigned char *pByte2 = pImg->pImg + byteNum2;
+	unsigned char *pByteCopy = pImgCopy->pImg + byteNum1;
+
+	unsigned short twoBytes1, twoBytes2;
+
+	twoBytes1 = (*pByte1 << 8) + (*(pByte1 + 1));
+	twoBytes2 = (*pByte2 << 8) + (*(pByte2 + 1));
+
+	twoBytes1 = twoBytes1 | twoBytes2;
+	twoBytes1 = twoBytes1 | (twoBytes2 >> 1);
+	twoBytes1 = twoBytes1 | (twoBytes2 << 1);
+
+	*pByteCopy = *pByteCopy | (twoBytes1 >> 8);
+}
+
+
+void RightEdgeErosion(imgInfo* pImg, imgInfo* pImgCopy, int byteNum1, int byteNum2)
+{
+	unsigned char *pByte1 = pImg->pImg + byteNum1;
+	unsigned char *pByte2 = pImg->pImg + byteNum2;
+	unsigned char *pByteCopy = pImgCopy->pImg + byteNum1;
+
+	unsigned short twoBytes1, twoBytes2;
+
+	twoBytes1 = (*(pByte1 - 1) << 8) + *pByte1;
+	twoBytes2 = (*(pByte2 - 1) << 8) + *pByte2;
+
+
+	twoBytes1 = twoBytes1 | twoBytes2;
+	twoBytes1 = twoBytes1 | (twoBytes2 >> 1);
+	twoBytes1 = twoBytes1 | (twoBytes2 << 1);
+
+	*pByteCopy = *pByteCopy | twoBytes1;
+}
+
+
 imgInfo* Erosion(imgInfo* pImg)
 {
 	imgInfo* pErosionInfo;
+	int byteColumn;
 
 	pErosionInfo = InitScreen(pImg->width, pImg->height);
 
 	int byteSize = pImg->height * pImg->rowByteSize;
 	int byteWidth = (pImg->width + 7) >> 3;
 
+	
 	for (int i = 0; i < byteSize; i++)
 	{
+		byteColumn = i % pImg->rowByteSize;
+		
+		// upper edge
 		if (i < pImg->rowByteSize)
 		{
-			TwoBytesErosion(pImg, pErosionInfo, i, i);
-			TwoBytesErosion(pImg, pErosionInfo, i, i + pImg->rowByteSize);
+			// left corner
+			if (byteColumn == 0)
+			{
+				LeftEdgeErosion(pImg, pErosionInfo, i, i);
+				LeftEdgeErosion(pImg, pErosionInfo, i, i + pImg->rowByteSize);
+			}
+			// right corner
+			else if (byteColumn == (byteWidth - 1))
+			{
+				RightEdgeErosion(pImg, pErosionInfo, i, i);
+				RightEdgeErosion(pImg, pErosionInfo, i, i + pImg->rowByteSize);
+			}
+			// middle
+			else
+			{
+				TwoBytesErosion(pImg, pErosionInfo, i, i);
+				TwoBytesErosion(pImg, pErosionInfo, i, i + pImg->rowByteSize);
+			}
 		}
+		// bottom edge
 		else if (i > (byteSize - pImg->rowByteSize))
 		{
-			TwoBytesErosion(pImg, pErosionInfo, i, i);
-			TwoBytesErosion(pImg, pErosionInfo, i, i - pImg->rowByteSize);
+			// left corner
+			if (byteColumn == 0)
+			{
+				LeftEdgeErosion(pImg, pErosionInfo, i, i);
+				LeftEdgeErosion(pImg, pErosionInfo, i, i - pImg->rowByteSize);
+			}
+			// right corner
+			else if (byteColumn == (byteWidth - 1))
+			{
+				RightEdgeErosion(pImg, pErosionInfo, i, i);
+				RightEdgeErosion(pImg, pErosionInfo, i, i - pImg->rowByteSize);
+			}
+			// middle
+			else
+			{
+				TwoBytesErosion(pImg, pErosionInfo, i, i);
+				TwoBytesErosion(pImg, pErosionInfo, i, i - pImg->rowByteSize);
+			}
 		}
+		// middle
 		else
 		{
-			TwoBytesErosion(pImg, pErosionInfo, i, i);
-			TwoBytesErosion(pImg, pErosionInfo, i, i + pImg->rowByteSize);
-			TwoBytesErosion(pImg, pErosionInfo, i, i - pImg->rowByteSize);
+			// left corner
+			if (byteColumn == 0)
+			{
+				LeftEdgeErosion(pImg, pErosionInfo, i, i);
+				LeftEdgeErosion(pImg, pErosionInfo, i, i + pImg->rowByteSize);
+				LeftEdgeErosion(pImg, pErosionInfo, i, i - pImg->rowByteSize);
+			}
+			// right corner
+			else if (byteColumn == (byteWidth - 1))
+			{
+				RightEdgeErosion(pImg, pErosionInfo, i, i);
+				RightEdgeErosion(pImg, pErosionInfo, i, i + pImg->rowByteSize);
+				RightEdgeErosion(pImg, pErosionInfo, i, i - pImg->rowByteSize);
+			}
+			// middle
+			else
+			{
+				TwoBytesErosion(pImg, pErosionInfo, i, i);
+				TwoBytesErosion(pImg, pErosionInfo, i, i + pImg->rowByteSize);
+				TwoBytesErosion(pImg, pErosionInfo, i, i - pImg->rowByteSize);
+			}
 		}
 	}
 
@@ -271,7 +367,7 @@ int main(int argc, char* argv[])
 	}
 
 
-	pInfo = readBMP("test4.bmp");
+	pInfo = readBMP("test.bmp");
 	/*
 	printf("poczatek pliku: %#x\n", pInfo->pImg);
 	printf("aktualne wpolrzedne: (%d, %d)\n", pInfo->cX, pInfo->cY);
