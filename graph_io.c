@@ -173,7 +173,7 @@ imgInfo* InitScreen (int w, int h)
 		free(pImg);
 		return 0;
 	}
-	memset(pImg->pImg, 0xFF, (((w + 31) >> 5) << 2) * h);
+	memset(pImg->pImg, 0, (((w + 31) >> 5) << 2) * h);
 	pImg->cX = 0;
 	pImg->cY = 0;
 	pImg->col = 0;
@@ -218,7 +218,7 @@ void TwoBytesErosion(imgInfo* pImg, imgInfo* pImgCopy, int byteNum1, int byteNum
 	threeBytes1 = threeBytes1 | (threeBytes2 >> 1);
 	threeBytes1 = threeBytes1 | (threeBytes2 << 1);
 
-	*pByteCopy = threeBytes1 >> 8;
+	*pByteCopy = *pByteCopy | (threeBytes1 >> 8);
 }
 
 
@@ -229,12 +229,26 @@ imgInfo* Erosion(imgInfo* pImg)
 	pErosionInfo = InitScreen(pImg->width, pImg->height);
 
 	int byteSize = pImg->height * pImg->rowByteSize;
+	int byteWidth = (pImg->width + 7) >> 3;
 
 	for (int i = 0; i < byteSize; i++)
 	{
-		TwoBytesErosion(pImg, pErosionInfo, i, i);
-		TwoBytesErosion(pImg, pErosionInfo, i, i + pImg->rowByteSize);
-		TwoBytesErosion(pImg, pErosionInfo, i, i - pImg->rowByteSize);
+		if (i < pImg->rowByteSize)
+		{
+			TwoBytesErosion(pImg, pErosionInfo, i, i);
+			TwoBytesErosion(pImg, pErosionInfo, i, i + pImg->rowByteSize);
+		}
+		else if (i > (byteSize - pImg->rowByteSize))
+		{
+			TwoBytesErosion(pImg, pErosionInfo, i, i);
+			TwoBytesErosion(pImg, pErosionInfo, i, i - pImg->rowByteSize);
+		}
+		else
+		{
+			TwoBytesErosion(pImg, pErosionInfo, i, i);
+			TwoBytesErosion(pImg, pErosionInfo, i, i + pImg->rowByteSize);
+			TwoBytesErosion(pImg, pErosionInfo, i, i - pImg->rowByteSize);
+		}
 	}
 
 	return pErosionInfo;
@@ -257,7 +271,7 @@ int main(int argc, char* argv[])
 	}
 
 
-	pInfo = readBMP("test.bmp");
+	pInfo = readBMP("test4.bmp");
 	/*
 	printf("poczatek pliku: %#x\n", pInfo->pImg);
 	printf("aktualne wpolrzedne: (%d, %d)\n", pInfo->cX, pInfo->cY);
