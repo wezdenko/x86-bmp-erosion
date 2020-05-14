@@ -191,31 +191,11 @@ void FreeScreen(imgInfo* pInfo)
 }
 
 /****************************************************************************************/
-
-extern unsigned int TwoWordsErosion(unsigned int word1, unsigned int word2);
+extern void RightEdgeErosion(unsigned char* pImg, unsigned char* pImgCopy, int byteNum1, int byteNum2);
 
 extern void MiddleErosion(unsigned char* pImg, unsigned char* pImgCopy, int byteNum1, int byteNum2);
 
 extern void LeftEdgeErosion(unsigned char* pImg, unsigned char* pImgCopy, int byteNum1, int byteNum2);
-
-
-void RightEdgeErosion(imgInfo* pImg, imgInfo* pImgCopy, int byteNum1, int byteNum2)
-{
-	unsigned char *pByte1 = pImg->pImg + byteNum1;
-	unsigned char *pByte2 = pImg->pImg + byteNum2;
-	unsigned char *pByteCopy = pImgCopy->pImg + byteNum1;
-
-	unsigned short twoBytes1, twoBytes2;
-
-	twoBytes1 = (*(pByte1 - 1) << 8) + *pByte1;
-	twoBytes2 = (*(pByte2 - 1) << 8) + *pByte2;
-
-
-	twoBytes1 = TwoWordsErosion(twoBytes1, twoBytes2);
-
-	*pByteCopy = *pByteCopy | twoBytes1;
-}
-
 
 imgInfo* Erosion(imgInfo* pImg)
 {
@@ -244,8 +224,8 @@ imgInfo* Erosion(imgInfo* pImg)
 			// right corner
 			else if (byteColumn == (byteWidth - 1))
 			{
-				RightEdgeErosion(pImg, pErodedImg, i, i);
-				RightEdgeErosion(pImg, pErodedImg, i, i + pImg->rowByteSize);
+				RightEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i);
+				RightEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i + pImg->rowByteSize);
 			}
 			// middle
 			else
@@ -266,8 +246,8 @@ imgInfo* Erosion(imgInfo* pImg)
 			// right corner
 			else if (byteColumn == (byteWidth - 1))
 			{
-				RightEdgeErosion(pImg, pErodedImg, i, i);
-				RightEdgeErosion(pImg, pErodedImg, i, i - pImg->rowByteSize);
+				RightEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i);
+				RightEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i - pImg->rowByteSize);
 			}
 			// middle
 			else
@@ -289,9 +269,9 @@ imgInfo* Erosion(imgInfo* pImg)
 			// right corner
 			else if (byteColumn == (byteWidth - 1))
 			{
-				RightEdgeErosion(pImg, pErodedImg, i, i);
-				RightEdgeErosion(pImg, pErodedImg, i, i + pImg->rowByteSize);
-				RightEdgeErosion(pImg, pErodedImg, i, i - pImg->rowByteSize);
+				RightEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i);
+				RightEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i + pImg->rowByteSize);
+				RightEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i - pImg->rowByteSize);
 			}
 			// middle
 			else
@@ -323,7 +303,7 @@ int main(int argc, char* argv[])
 	}
 
 
-	pInfo = readBMP("test4.bmp");
+	pInfo = readBMP("test.bmp");
 	/*
 	printf("poczatek pliku: %#x\n", pInfo->pImg);
 	printf("aktualne wpolrzedne: (%d, %d)\n", pInfo->cX, pInfo->cY);

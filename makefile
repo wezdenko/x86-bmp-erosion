@@ -3,7 +3,7 @@ ASMBIN=nasm
 
 CFILE=erosion
 ASMFILE=MiddleErosion
-ASMFILE2=TwoWordsErosion
+ASMFILE2=RightEdgeErosion
 ASMFILE3=LeftEdgeErosion
 
 all : asm cc link clean

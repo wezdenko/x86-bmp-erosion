@@ -1,7 +1,7 @@
 section	.text
-global  MiddleErosion
+global  RightEdgeErosion
 
-MiddleErosion:
+RightEdgeErosion:
 	push ebp
 	mov	ebp, esp
 
@@ -11,11 +11,11 @@ MiddleErosion:
     mov edx, DWORD [ebp+16]
 
     add eax, edx
-    dec eax      ; wsk na bajt poprzedzajacy
+	dec eax
 
-    ; wczytanie zawartosci czterech bajtow
-    movbe edx, DWORD [eax]
-    push edx
+    ; wczytanie zawartosci dwoch bajtow
+    movbe dx, WORD [eax]
+    push dx
 
     ; bajt drugi
     ; obliczanie adresu bajtu
@@ -23,25 +23,23 @@ MiddleErosion:
     mov edx, DWORD [ebp+20]
 
     add eax, edx
-    dec eax      ; wsk na bajt poprzedzajacy
+	dec eax
 
-    ; wczytanie zawartosci czterech bajtow
-    movbe edx, DWORD [eax]
+    ; wczytanie zawartosci dwoch bajtow
+    movbe dx, WORD [eax]
 
 
-    pop eax ; pierwszy DWORD
-    ; edx - drugi DWORD
+    pop ax ; pierwszy WORD
+    ; dx - drugi WORD
 
     ; erozja bajtow
-	or eax, edx
+	or ax, dx
 
-	shl edx, 1
-	or eax, edx
+	shl dx, 1
+	or ax, dx
 
-	shr edx, 2
-	or eax, edx
-
-    shr eax, 16
+	shr dx, 2
+	or ax, dx
 
     ; obliczenie adresu do zapisu
     mov edx, DWORD [ebp+12]
