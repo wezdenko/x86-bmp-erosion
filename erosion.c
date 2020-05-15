@@ -1,5 +1,3 @@
-// graph_io.c : Defines the entry point for the console application.
-//
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,8 +8,6 @@
 // -lm  ze wzgledu na sinus i cosinus
 // -m32 bo projekt powinien byc 32-bitowy (int = 4 bajty)
 // -fpack-struct  bo header (obrazu cz-bialego) ma miec 62 bajty
-
-// gcc -lm -m32 -fpack-struct graph_io.c
 
 typedef struct
 {
@@ -40,8 +36,6 @@ typedef struct
 	int rowByteSize;		// rozmiar wiersza w bajtach
 	int width, height;		// szerokosc i wysokosc obrazu
 	unsigned char* pImg;	// wskazanie na początek danych pikselowych
-	int cX, cY;				// "aktualne współrzędne" 
-	int col;				// "aktualny kolor"
 } imgInfo;
 
 void* freeResources(FILE* pFile, void* pFirst, void* pSnd)
@@ -167,6 +161,7 @@ imgInfo* InitScreen (int w, int h)
 		return 0;
 	pImg->height = h;
 	pImg->width = w;
+	pImg->rowByteSize = ((w + 31) >> 5) << 2;
 	pImg->pImg = (unsigned char*) malloc((((w + 31) >> 5) << 2) * h);
 	if (pImg->pImg == 0)
 	{
@@ -174,9 +169,6 @@ imgInfo* InitScreen (int w, int h)
 		return 0;
 	}
 	memset(pImg->pImg, 0, (((w + 31) >> 5) << 2) * h);
-	pImg->cX = 0;
-	pImg->cY = 0;
-	pImg->col = 0;
 	return pImg;
 }
 
@@ -204,7 +196,9 @@ imgInfo* Erosion(imgInfo* pImg)
 
 	pErodedImg = InitScreen(pImg->width, pImg->height);
 
+	// rozmiar obrazka w bajtach
 	int byteSize = pImg->height * pImg->rowByteSize;
+	// szerokosc w bajtach (bez bajtow wyrownujacych)
 	int byteWidth = (pImg->width + 7) >> 3;
 
 	
@@ -215,13 +209,13 @@ imgInfo* Erosion(imgInfo* pImg)
 		// upper edge
 		if (i < pImg->rowByteSize)
 		{
-			// left corner
+			// left edge
 			if (byteColumn == 0)
 			{
 				LeftEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i);
 				LeftEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i + pImg->rowByteSize);
 			}
-			// right corner
+			// right edge
 			else if (byteColumn == (byteWidth - 1))
 			{
 				RightEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i);
@@ -237,13 +231,13 @@ imgInfo* Erosion(imgInfo* pImg)
 		// bottom edge
 		else if (i > (byteSize - pImg->rowByteSize))
 		{
-			// left corner
+			// left edge
 			if (byteColumn == 0)
 			{
 				LeftEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i);
 				LeftEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i - pImg->rowByteSize);
 			}
-			// right corner
+			// right edge
 			else if (byteColumn == (byteWidth - 1))
 			{
 				RightEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i);
@@ -259,14 +253,14 @@ imgInfo* Erosion(imgInfo* pImg)
 		// middle
 		else
 		{
-			// left corner
+			// left edge
 			if (byteColumn == 0)
 			{
 				LeftEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i);
 				LeftEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i + pImg->rowByteSize);
 				LeftEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i - pImg->rowByteSize);
 			}
-			// right corner
+			// right edge
 			else if (byteColumn == (byteWidth - 1))
 			{
 				RightEdgeErosion(pImg->pImg, pErodedImg->pImg, i, i);
@@ -292,7 +286,6 @@ int main(int argc, char* argv[])
 {
 	imgInfo* pInfo;
 	imgInfo* pErodedImg;
-	int i;
 
 	printf("Size of bmpHeader = %d\n", sizeof(bmpHdr));
 	
@@ -302,15 +295,8 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-
 	pInfo = readBMP("test.bmp");
-	/*
-	printf("poczatek pliku: %#x\n", pInfo->pImg);
-	printf("aktualne wpolrzedne: (%d, %d)\n", pInfo->cX, pInfo->cY);
-	printf("aktualny kolor: %d\n", pInfo->col);
-	printf("wysokosc: %d\n", pInfo->height);
-	printf("szerokosc: %d\n", pInfo->width);
-	*/
+
 	pErodedImg = Erosion(pInfo);
 
 	saveBMP(pErodedImg, "result.bmp");
