@@ -13,7 +13,8 @@ LeftEdgeErosion:
     add eax, edx
 
     ; wczytanie zawartosci dwoch bajtow
-    movbe dx, WORD [eax]
+    mov dh, byte [eax]
+    mov dl, byte [eax+1]
     push dx
 
     ; bajt drugi
@@ -24,7 +25,8 @@ LeftEdgeErosion:
     add eax, edx
 
     ; wczytanie zawartosci dwoch bajtow
-    movbe dx, WORD [eax]
+    mov dh, byte [eax]
+    mov dl, byte [eax+1]
 
 
     pop ax ; pierwszy WORD

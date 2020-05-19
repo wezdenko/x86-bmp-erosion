@@ -201,8 +201,8 @@ imgInfo* Erosion(imgInfo* pImg)
 	// szerokosc w bajtach (bez bajtow wyrownujacych)
 	int byteWidth = (pImg->width + 7) >> 3;
 
-	
-	for (int i = 0; i < byteSize; i++)
+	int i;
+	for (i = 0; i < byteSize; i++)
 	{
 		byteColumn = i % pImg->rowByteSize;
 		

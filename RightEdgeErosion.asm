@@ -14,7 +14,8 @@ RightEdgeErosion:
 	dec eax
 
     ; wczytanie zawartosci dwoch bajtow
-    movbe dx, WORD [eax]
+    mov dh, byte [eax]
+    mov dl, byte [eax+1]
     push dx
 
     ; bajt drugi
@@ -26,7 +27,8 @@ RightEdgeErosion:
 	dec eax
 
     ; wczytanie zawartosci dwoch bajtow
-    movbe dx, WORD [eax]
+    mov dh, byte [eax]
+    mov dl, byte [eax+1]
 
 
     pop ax ; pierwszy WORD

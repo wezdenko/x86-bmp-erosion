@@ -14,7 +14,12 @@ MiddleErosion:
     dec eax      ; wsk na bajt poprzedzajacy
 
     ; wczytanie zawartosci czterech bajtow
-    movbe edx, DWORD [eax]
+    mov dl, byte [eax]
+    shl edx, 8
+    mov dl, byte [eax+1]
+    shl edx, 8
+    mov dl, byte [eax+2]
+    shl edx, 8
     push edx
 
     ; bajt drugi
@@ -26,7 +31,12 @@ MiddleErosion:
     dec eax      ; wsk na bajt poprzedzajacy
 
     ; wczytanie zawartosci czterech bajtow
-    movbe edx, DWORD [eax]
+    mov dl, byte [eax]
+    shl edx, 8
+    mov dl, byte [eax+1]
+    shl edx, 8
+    mov dl, byte [eax+2]
+    shl edx, 8
 
 
     pop eax ; pierwszy DWORD
